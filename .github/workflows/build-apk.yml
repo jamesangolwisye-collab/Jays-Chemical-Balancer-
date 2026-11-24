@@ -14,8 +14,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: 8.7
-      - run: gradle assembleDebug
+      - name: Build APK
+        run: |
+          DIR=$(dirname "$(find . -name settings.gradle | head -1)")
+          echo "Project folder: $DIR"
+          ls -la "$DIR"
+          cd "$DIR"
+          gradle assembleDebug
+          cp "$(find . -name app-debug.apk | head -1)" "$GITHUB_WORKSPACE/app-debug.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: JaysChemicalBalancer-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          path: app-debug.apk
