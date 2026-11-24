@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Jay’s Chemical Balancer</title>
+<style>
+:root{--bg:#eef3f1;--grid:#d9e4e0;--ink:#10302d;--mute:#52706b;--card:#fbfdfc;--line:#c3d3ce;--acc:#1b4fd8;--accfg:#fff;--err:#a3281c;--errbg:#fbe9e6;--serif:"Newsreader",Georgia,"Times New Roman",serif;--sans:"Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0d1f1d;--grid:#16302d;--ink:#e3f0ed;--mute:#8fb0aa;--card:#12292a;--line:#2a4a47;--acc:#7da2ff;--accfg:#0b1a2e;--err:#ff9b8e;--errbg:#3a1a17}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0d1f1d;--grid:#16302d;--ink:#e3f0ed;--mute:#8fb0aa;--card:#12292a;--line:#2a4a47;--acc:#7da2ff;--accfg:#0b1a2e;--err:#ff9b8e;--errbg:#3a1a17}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:28px 28px;color:var(--ink);font-family:var(--sans);line-height:1.5}
+main{max-width:760px;margin:0 auto;padding:40px 20px 56px}
+h1{font-family:var(--serif);font-weight:600;font-size:clamp(2rem,6vw,3rem);margin:0 0 6px;letter-spacing:-.01em}
+.sub{color:var(--mute);margin:0 0 28px;max-width:60ch}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:20px}
+label{font-weight:600;font-size:.95rem}
+.row{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+input[type=text]{flex:1 1 280px;min-width:0;font:inherit;font-family:var(--serif);font-size:1.3rem;padding:12px 14px;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:4px}
+input:focus,button:focus-visible{outline:3px solid var(--acc);outline-offset:1px}
+button{font:inherit;cursor:pointer;border-radius:4px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px}
+button.go{background:var(--acc);color:var(--accfg);border-color:var(--acc);font-weight:600;padding:12px 22px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;align-items:center;color:var(--mute);font-size:.9rem}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chips button{font-family:var(--serif);font-size:1rem;padding:5px 11px}
+.out{margin-top:22px}
+.eq{font-family:var(--serif);font-size:clamp(1.4rem,4.6vw,2.2rem);line-height:1.6;overflow-x:auto;padding:6px 0}
+.eq .st{font-size:.6em;color:var(--mute);margin-left:1px}
+.tag{display:inline-block;font-size:.85rem;padding:2px 10px;border:1px solid var(--line);border-radius:99px;color:var(--mute);margin-right:8px}
+.err{background:var(--errbg);color:var(--err);border-radius:4px;padding:12px 14px}
+.note{color:var(--mute);font-size:.9rem;margin-top:10px}
+.scroll{overflow-x:auto;margin-top:14px}
+table{border-collapse:collapse;font-family:var(--serif);font-size:1.05rem;min-width:260px}
+th,td{padding:5px 18px 5px 0;text-align:left;border-bottom:1px solid var(--line)}
+th{font-family:var(--sans);font-size:.85rem;color:var(--mute);font-weight:600}
+h2{font-size:1rem;margin:22px 0 0}
+.hh{display:flex;justify-content:space-between;align-items:center;gap:10px}.hh h2{margin:0;font-size:1.1rem}.hi{display:flex;gap:10px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:6px 0}.hbtn{flex:1;min-width:0;text-align:left;border:0;background:none;font-family:var(--serif);font-size:1.15rem;padding:6px 0;overflow-x:auto;white-space:nowrap}.hbtn .st{font-size:.6em;color:var(--mute)}footer{margin-top:28px;color:var(--mute);font-size:.88rem}
+</style>
+</head>
+<body>
+<main>
+<h1>Jay’s Chemical Balancer</h1>
+<p class="sub">Type any chemical equation. Normal (→) and reversible (⇌) reactions both work, including ions, charges, hydrates and brackets.</p>
+<div class="panel">
+<label for="eq">Unbalanced equation</label>
+<div class="row">
+<input id="eq" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="e.g. Fe + O2 -> Fe2O3" aria-describedby="help">
+<button class="go" id="go">Balance equation</button>
+</div>
+<div class="tools" id="help">Insert:
+<button data-ins=" → " title="Normal reaction arrow">→</button>
+<button data-ins=" ⇌ " title="Reversible reaction arrow">⇌</button>
+<span>or type -&gt; , = , &lt;=&gt; . Charges: Fe^3+, SO4^2-, e-</span>
+</div>
+<div class="chips" id="chips" aria-label="Examples"></div>
+</div>
+<div class="out" id="out" aria-live="polite"></div>
+<section class="panel" style="margin-top:22px" aria-label="History"><div class="hh"><h2>History</h2><button id="clr">Clear all</button></div><div id="hist"></div></section>
+<footer>State symbols such as (s), (l), (g) and (aq) are kept. Coefficients are found by solving the atom and charge conservation equations exactly.</footer>
+</main>
+<script>
+(function(){
+var EL=new Set("H He Li Be B C N O F Ne Na Mg Al Si P S Cl Ar K Ca Sc Ti V Cr Mn Fe Co Ni Cu Zn Ga Ge As Se Br Kr Rb Sr Y Zr Nb Mo Tc Ru Rh Pd Ag Cd In Sn Sb Te I Xe Cs Ba La Ce Pr Nd Pm Sm Eu Gd Tb Dy Ho Er Tm Yb Lu Hf Ta W Re Os Ir Pt Au Hg Tl Pb Bi Po At Rn Fr Ra Ac Th Pa U Np Pu Am Cm Bk Cf Es Fm Md No Lr Rf Db Sg Bh Hs Mt Ds Rg Cn Nh Fl Mc Lv Ts Og".split(" "));
+var EXAMPLES=["H2 + O2 -> H2O","N2 + H2 <=> NH3","Fe + O2 -> Fe2O3","C6H12O6 + O2 -> CO2 + H2O","Ca(OH)2 + H3PO4 -> Ca3(PO4)2 + H2O","MnO4^- + Fe^2+ + H^+ -> Mn^2+ + Fe^3+ + H2O","CuSO4·5H2O <=> CuSO4 + H2O"];
+var $=function(id){return document.getElementById(id)};
+var input=$("eq"),out=$("out");
+var KEY="jcb-history";
+function loadH(){try{var a=JSON.parse(localStorage.getItem(KEY)||"[]");return Array.isArray(a)?a.filter(function(x){return typeof x==="string"}):[]}catch(e){return[]}}
+function saveH(a){try{localStorage.setItem(KEY,JSON.stringify(a))}catch(e){}}
+var hist=loadH();
+function addHist(s){hist=hist.filter(function(x){return x!==s});hist.unshift(s);hist=hist.slice(0,50);saveH(hist);drawH()}
+function drawH(){
+  var box=$("hist");box.innerHTML="";
+  if(!hist.length){box.innerHTML='<p class="note">Balanced equations you solve will be saved here.</p>';return}
+  hist.forEach(function(s,i){
+    var res;try{res=balance(s)}catch(e){return}
+    var row=document.createElement("div");row.className="hi";
+    var b=document.createElement("button");b.className="hbtn";
+    b.innerHTML=side(res.L,res.co,0,fmtHtml)+" "+(res.reversible?"⇌":"→")+" "+side(res.R,res.co,res.L.length,fmtHtml);
+    b.onclick=function(){input.value=s;run(false)};
+    var d=document.createElement("button");d.textContent="Delete";d.setAttribute("aria-label","Delete this equation from history");
+    d.onclick=function(){hist.splice(i,1);saveH(hist);drawH()};
+    row.appendChild(b);row.appendChild(d);box.appendChild(row);
+  });
+}
+
+function parseFormula(s){
+  var stack=[{}],i=0;
+  function num(){var n="";while(i<s.length&&/\d/.test(s[i]))n+=s[i++];return n?parseInt(n,10):1}
+  function add(o,e,k){o[e]=(o[e]||0)+k}
+  while(i<s.length){
+    var c=s[i];
+    if(c==="("||c==="["){stack.push({});i++}
+    else if(c===")"||c==="]"){
+      if(stack.length<2)throw new Error("Unmatched bracket in “"+s+"”.");
+      i++;var k=num(),top=stack.pop(),t=stack[stack.length-1];
+      for(var e in top)add(t,e,top[e]*k);
+    }else if(/[A-Z]/.test(c)){
+      var el=c;i++;
+      while(i<s.length&&/[a-z]/.test(s[i]))el+=s[i++];
+      if(!EL.has(el))throw new Error("“"+el+"” is not a known element (in “"+s+"”). Check capital letters.");
+      add(stack[stack.length-1],el,num());
+    }else throw new Error("Unexpected “"+c+"” in “"+s+"”.");
+  }
+  if(stack.length!==1)throw new Error("Unmatched bracket in “"+s+"”.");
+  return stack[0];
+}
+
+function parseSpecies(raw){
+  var t=raw.trim().replace(/^\d+\s*/,""),state="",m=t.match(/\s*\((s|l|g|aq)\)$/i);
+  if(m){state=m[0].trim();t=t.slice(0,t.length-m[0].length).trim()}
+  if(!t)throw new Error("There is an empty term in the equation.");
+  if(/^e(\^?-)?$/.test(t))return{base:"e",charge:-1,atoms:{},state:state,electron:true};
+  var charge=0,ci=t.indexOf("^");
+  if(ci>=0){
+    var cm=t.slice(ci+1).match(/^(\d*)([+-])$/);
+    if(!cm)throw new Error("Can’t read the charge in “"+raw.trim()+"”. Use a form like Fe^3+ or SO4^2-.");
+    charge=(cm[1]?parseInt(cm[1],10):1)*(cm[2]==="+"?1:-1);t=t.slice(0,ci);
+  }
+  var atoms={};
+  t.split(/[·*•]/).forEach(function(p){
+    var pm=p.match(/^(\d*)(.+)$/);
+    if(!pm)throw new Error("Can’t read “"+raw.trim()+"”.");
+    var mult=pm[1]?parseInt(pm[1],10):1,a=parseFormula(pm[2]);
+    for(var e in a)atoms[e]=(atoms[e]||0)+a[e]*mult;
+  });
+  return{base:t,charge:charge,atoms:atoms,state:state};
+}
+
+function splitSide(str){
+  var p=str.replace(/\^(\d*)([+-])/g,function(m,d,s){return"^"+d+(s==="+"?"\u0001":"\u0002")});
+  return p.split("+").map(function(x){return x.replace(/\u0001/g,"+").replace(/\u0002/g,"-").trim()});
+}
+
+function norm(s){
+  return s.replace(/[₀-₉]/g,function(c){return String(c.charCodeAt(0)-8320)}).replace(/[−–]/g,"-").replace(/⁺/g,"^+").replace(/⁻/g,"^-");
+}
+
+function gcd(a,b){a=a<0n?-a:a;b=b<0n?-b:b;while(b){var t=a%b;a=b;b=t}return a}
+
+function nullspace(M,n){
+  var r=0,piv=[],i,k,c;
+  for(c=0;c<n&&r<M.length;c++){
+    var p=-1;for(i=r;i<M.length;i++){if(M[i][c]!==0n){p=i;break}}
+    if(p<0)continue;
+    var tmp=M[p];M[p]=M[r];M[r]=tmp;
+    for(i=0;i<M.length;i++){
+      if(i===r||M[i][c]===0n)continue;
+      var a=M[r][c],b=M[i][c];
+      M[i]=M[i].map(function(v,j){return v*a-M[r][j]*b});
+      var g=0n;M[i].forEach(function(v){g=gcd(g,v)});
+      if(g>1n)M[i]=M[i].map(function(v){return v/g});
+    }
+    piv.push(c);r++;
+  }
+  var free=[];for(c=0;c<n;c++)if(piv.indexOf(c)<0)free.push(c);
+  return{M:M,piv:piv,free:free};
+}
+
+function balance(text){
+  var s=norm(text).trim();
+  if(!s)throw new Error("Enter an equation first, for example H2 + O2 -> H2O.");
+  var parts=s.split(/(<=+>|<-+>|⇌|⇄|↔|-+>|=+>|→|=)/);
+  if(parts.length!==3)throw new Error(parts.length<3?"No arrow found. Separate the two sides with -> , = , → or ⇌.":"Use only one arrow in the equation.");
+  var reversible=/[<⇌⇄↔]/.test(parts[1]);
+  var L=splitSide(parts[0]).map(parseSpecies),R=splitSide(parts[2]).map(parseSpecies);
+  var all=L.concat(R),n=all.length,els=[],hasCharge=false;
+  all.forEach(function(x){for(var e in x.atoms)if(els.indexOf(e)<0)els.push(e);if(x.charge)hasCharge=true});
+  els.forEach(function(e){
+    var l=L.some(function(x){return x.atoms[e]}),r=R.some(function(x){return x.atoms[e]});
+    if(l!==r)throw new Error("“"+e+"” appears only on the "+(l?"left":"right")+" side, so this can’t be balanced. Check the formulas.");
+  });
+  var M=els.map(function(e){return all.map(function(x,j){return BigInt((x.atoms[e]||0)*(j<L.length?1:-1))})});
+  if(hasCharge)M.push(all.map(function(x,j){return BigInt(x.charge*(j<L.length?1:-1))}));
+  var ns=nullspace(M,n);
+  if(ns.free.length===0)throw new Error("No balanced solution exists for these species. Check for a missing or mistyped formula.");
+  if(ns.free.length>1)throw new Error("This equation can be balanced in more than one independent way (it mixes "+ns.free.length+" reactions). Split it into separate equations.");
+  var f=ns.free[0],vec=new Array(n),den=1n;
+  vec[f]=[1n,1n];
+  ns.piv.forEach(function(pc,ri){
+    var nu=-ns.M[ri][f],d=ns.M[ri][pc];
+    if(d<0n){d=-d;nu=-nu}
+    var g=gcd(nu,d);if(g===0n)g=1n;
+    vec[pc]=[nu/g,d/g];
+  });
+  vec.forEach(function(v){den=den/gcd(den,v[1])*v[1]});
+  var ints=vec.map(function(v){return v[0]*(den/v[1])}),g=0n;
+  ints.forEach(function(v){g=gcd(g,v)});
+  ints=ints.map(function(v){return v/g});
+  if(ints.every(function(v){return v<=0n}))ints=ints.map(function(v){return -v});
+  if(!ints.every(function(v){return v>0n}))throw new Error("No balanced solution with all-positive coefficients exists. Check that every species belongs in this reaction.");
+  return{L:L,R:R,co:ints.map(Number),reversible:reversible,hasCharge:hasCharge,els:els};
+}
+
+function esc(x){return x.replace(/&/g,"&amp;").replace(/</g,"&lt;")}
+function chargeStr(c){var a=Math.abs(c);return(a>1?a:"")+(c>0?"+":"−")}
+function fmtHtml(x){
+  if(x.electron)return"e<sup>−</sup>";
+  var h=esc(x.base).replace(/(?<=[A-Za-z\)\]])(\d+)/g,"<sub>$1</sub>");
+  if(x.charge)h+="<sup>"+chargeStr(x.charge)+"</sup>";
+  return h+(x.state?'<span class="st">'+esc(x.state)+"</span>":"");
+}
+function fmtText(x){
+  var t=x.electron?"e-":x.base+(x.charge?"^"+(Math.abs(x.charge)>1?Math.abs(x.charge):"")+(x.charge>0?"+":"-"):"");
+  return t+(x.state?x.state:"");
+}
+function side(list,co,off,fn){return list.map(function(x,i){var c=co[off+i];return(c>1?c+(fn===fmtText?"":""):"")+fn(x)}).join(" + ")}
+
+function render(res){
+  var arrow=res.reversible?"⇌":"→",nL=res.L.length;
+  var html=side(res.L,res.co,0,fmtHtml)+" "+arrow+" "+side(res.R,res.co,nL,fmtHtml);
+  var plain=side(res.L,res.co,0,fmtText)+" "+arrow+" "+side(res.R,res.co,nL,fmtText);
+  var rows=res.els.map(function(e){
+    var l=0,r=0;
+    res.L.forEach(function(x,i){l+=(x.atoms[e]||0)*res.co[i]});
+    res.R.forEach(function(x,i){r+=(x.atoms[e]||0)*res.co[nL+i]});
+    return"<tr><td>"+e+"</td><td>"+l+"</td><td>"+r+"</td></tr>";
+  });
+  if(res.hasCharge){
+    var cl=0,cr=0;
+    res.L.forEach(function(x,i){cl+=x.charge*res.co[i]});
+    res.R.forEach(function(x,i){cr+=x.charge*res.co[nL+i]});
+    rows.push("<tr><td>Charge</td><td>"+cl+"</td><td>"+cr+"</td></tr>");
+  }
+  out.innerHTML='<div class="panel"><span class="tag">'+(res.reversible?"Reversible reaction":"Normal reaction")+'</span><span class="tag">Balanced</span><div class="eq">'+html+'</div>'+
+    '<div class="row"><button id="copy">Copy equation</button></div>'+
+    '<h2>Check: left side equals right side</h2><div class="scroll"><table><tr><th>Element</th><th>Left</th><th>Right</th></tr>'+rows.join("")+'</table></div></div>';
+  $("copy").onclick=function(){
+    var b=$("copy");
+    function done(){b.textContent="Copied"}
+    try{navigator.clipboard.writeText(plain).then(done,function(){b.textContent="Select the equation and copy it"})}catch(e){b.textContent="Select the equation and copy it"}
+  };
+}
+
+function run(save){
+  try{var r=balance(input.value);render(r);if(save&&input.value.trim())addHist(input.value.trim())}
+  catch(e){out.innerHTML='<div class="err" role="alert">'+esc(e.message)+"</div>"}
+}
+
+$("go").onclick=function(){run(true)};
+$("clr").onclick=function(){hist=[];saveH(hist);drawH()};
+input.addEventListener("keydown",function(e){if(e.key==="Enter")run(true)});
+document.querySelectorAll("[data-ins]").forEach(function(b){
+  b.onclick=function(){
+    var s=input.selectionStart==null?input.value.length:input.selectionStart,e=input.selectionEnd==null?s:input.selectionEnd,v=b.getAttribute("data-ins");
+    input.value=input.value.slice(0,s)+v+input.value.slice(e);
+    input.focus();var p=s+v.length;input.setSelectionRange(p,p);
+  };
+});
+EXAMPLES.forEach(function(x){
+  var b=document.createElement("button");
+  b.type="button";b.textContent=x.replace(/(?<=[A-Za-z\)])(\d+)/g,function(m){return m.split("").map(function(d){return"₀₁₂₃₄₅₆₇₈₉"[d]}).join("")}).replace(/\^/g,"").replace(/<=>/,"⇌").replace(/->/,"→");
+  b.onclick=function(){input.value=x;run(true)};
+  $("chips").appendChild(b);
+});
+drawH();
+input.value="Fe + O2 -> Fe2O3";run(false);
+})();
+</script>
+</body>
+</html>
